@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Page Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="chartist.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="chartist.min.js"></script>
+    <script src="moment.min.js"></script>
+    <script src="chartistzoom.min.js"></script>
+    <script src="segment-display.js"></script>
+</head>
+
+<body>
+    <div class="fixed-header">
+        <h1 id="title">CO2-Ampel - %DEVICENAME%</h1>
+        <button class="tablink" onclick="showPage('live');return false;">Live</button>
+        <button class="tablink" onclick="showPage('charts');return false;">Kurven</button>
+        <button class="tablink" onclick="showPage('config');return false;">Konfig.</button>
+    </div>
+
+    <div class="page_container" id="live">
+        <div id="canvasesdiv" style="position:relative;">
+            <canvas id="co2-ampel" style="z-index: 1;
+                    position:absolute;
+                    left:0px;
+                    top:0px;
+                    " height="400" width="400">
+                This text is displayed if your browser does not support HTML5 Canvas.
+            </canvas>
+            <canvas id="display" style="z-index: 2;
+                    position:absolute;
+                    left:90px;
+                    top:90px;
+                    " height="200" width="200">
+                This text is displayed if your browser does not support HTML5 Canvas.
+            </canvas>
+        </div>
+    </div>
+
+    <div class="page_container" id="charts">
+        <div class="ct-chart ct-perfect-fourth" id="dailyChart" ondblclick="reset()"></div>
+        <p id="logDate"></p><br>
+        <p>Zoomen in die Grafik durch Aufziehen einer Auswahlbox.</p>
+        <p>Doppelklick oder rechte Maustaste zum zur&uuml;cksetzen.</p>
+        <div>
+            <form>
+                <select name="select-chart" id="select-chart" class="selectbox" onchange="loadSelected(this.value)">
+                    <option value="1">Montag</option>
+                    <option value="2">Dienstag</option>
+                    <option value="3">Mittwoch</option>
+                    <option value="4">Donnerstag</option>
+                    <option value="5">Freitag</option>
+                    <option value="6">Samstag</option>
+                    <option value="7">Sonntag</option>
+                </select>
+            </form>
+        </div>
+        <button class="btn" id="downloadData" onclick="downloadData()">Daten herunterladen</button>
+    </div>
+
+    <div class="page_container" id="config">
+        <div class="ct-chart ct-perfect-fourth" id="liveChart"></div>
+        <div class="wrap">
+            <div class="accordion">
+                <div>
+                    <input type="radio" name="acc" id="Grenzen" class="acc">
+                    <label for="Grenzen" class="acc">Grenzen</label>
+                    <div class="panel">
+                        <table>
+                            <tr>
+                                <td style="text-align: left"><label>Gelb ab:</label></td>
+                                <td><input type="range" id="limit1" value="1000" min="700" max="1000" step="100"
+                                        oninput="setLimits();" /></td>
+                                <td style="text-align: right"><label id="lim1"></label></td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: left"><label>Rot ab:</label></td>
+                                <td><input type="range" id="limit2" value="2000" min="1400" max="2000" step="100"
+                                        oninput="setLimits();" /></td>
+                                <td style="text-align: right"><label id="lim2"></label></td>
+                            </tr>
+                        </table>
+                        <p id="alertTextLimit"></p>
+                        <button class="btn" type="button" onClick="saveLimits()">Grenzen in Ampel speichern</button>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion">
+                <div>
+                    <input type="radio" name="acc" id="Zeit" class="acc">
+                    <label for="Zeit" class="acc">Zeit setzen</label>
+                    <div class="panel">
+                        <label for="datetime">Zeit einstellen: </label>
+                        <input type="datetime-local" name="" id="datetime">
+                        <p id="alertTextTime"></p>
+                        <button class="btn" type="button" onClick="setTime()">Zeit einstellen...</button>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion">
+                <div>
+                    <input type="radio" name="acc" id="calib" class="acc">
+                    <label for="calib" class="acc">Sensor Kalibrierung</label>
+                    <div class="panel">
+                        <p>F&uuml;r Frischluft sorgen (z.B. im Freien, oder am offenen Fenster,
+                            unbedingt windgesch&uuml;tzt).</p>
+                        <p>Mindestens 2 Minuten warten bis der Messwert stabil ist.</p>
+                        <p>Nun den Kalibrierungsvorgang durch Eingabe des Passworts best&auml;tigen...</p>
+
+                        <p> <label for="password" class="ui-hidden-accessible">Passwort:</label>
+                            <input type="password" name="password" id="password" placeholder="Passwort" /></p>
+                        <p id="alertText"></p>
+
+                        <button class="btn" type="button" onClick="calibrateSensor()">Kalibrierung
+                            durchf&uuml;hren...</button>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion">
+                <div>
+                    <input type="radio" name="acc" id="wifi" class="acc">
+                    <label for="wifi" class="acc">WLAN Setup</label>
+                    <div class="panel">
+                        <table>
+                            <tr>
+                                <td style="text-align: left"> <label>Mit WLAN verbinden</label></td>
+                                <td style="text-align: left"><label class="switch"><input type="checkbox" id="stationcheck"
+                                        style="width:auto"><span class="slider"></span></label></td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: left"><label>SSID:</label></td>
+                                <td><input type="text" placeholder="SSID" name="ssid" id="wifissid"></td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: left"><label>Passwort:</label></td>
+                                <td><input type="password" name="wifipassword" id="wifipassword"
+                                        placeholder="WLAN-Passwort" /></td>
+                            </tr>
+                        </table>
+                        <p id="alertTextWifi"></p>
+                        <button class="btn" type="button" onClick="setWifi();">WLAN Einstellungen speichern...</button>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion">
+                <div>
+                    <input type="radio" name="acc" id="Name" class="acc">
+                    <label for="Name" class="acc">Ger&auml;tebezeichnung</label>
+                    <div class="panel">
+                        <label for="devicename">Name: </label>
+                        <input type="text" pattern="[a-zA-Z0-9-]+" required placeholder="Bezeichnung" name="devicename" id="devicename" minlength="4" maxlength="14" >
+                        <p id="alertTextDevice"></p>
+                        <button class="btn" type="button" onClick="setDeviceName()">Ger&auml;tebezeichnung einstellen...</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="fixed-footer">
+        <div class="container">&copy; 2020 - Version 1.0</div>
+    </div>
+
+    <script>
+        var pages = ['live', 'charts', 'config'];
+        var sensorData = [];
+        var liveChartLabels = [];
+        var liveChartData = [];
+        var dailyChartLabels = [];
+        var dailyChartData = [];
+        var maxLiveData = 60;
+        var timeFormat = 'HH:mm:ss';
+        var dayOfTheWeek = 0;
+        var screenwidth = 0;
+        var limit_1 = %LIMIT1% ;     //TODO LIMITS aus Konfiguration übertragen
+        var limit_2 = %LIMIT2% ;
+        var pwReg = "Test123";
+        var logFiles = ["/logMonday.csv", "/logTuesday.csv", "/logWednesday.csv", "/logThursday.csv", "/logFriday.csv", "/logSaturday.csv", "/logSunday.csv"];
+        var co2AmpelContext = document.getElementById('co2-ampel').getContext('2d');
+        var segmentDisplayContext = document.getElementById('display').getContext('2d');
+        var display = new SegmentDisplay("display");
+        display.pattern = "####";
+        display.cornerType = 2;
+        display.displayType = 7;
+        display.displayAngle = 9;
+        display.digitHeight = 20;
+        display.digitWidth = 12;
+        display.digitDistance = 2;
+        display.segmentWidth = 3;
+        display.segmentDistance = 0.5;
+        display.colorOn = "rgba(255, 255, 255, 1)";
+        display.colorOff = "rgba(255, 255, 255, 0.2)";
+
+
+        var data = {
+            labels: liveChartLabels,
+            series: [liveChartData]
+        };
+
+        var options = {
+            showPoint: false,
+            axisY: {
+                type: Chartist.AutoScaleAxis,
+                max: 2400,
+                high: 2400,
+                low: 0,
+            },
+            targetLineBlue: {
+                value: 400,
+                class: 'ct-target-line_blue'
+            },
+            targetLineYellow: {
+                value: limit_1,//1000,
+                class: 'ct-target-line_yellow'
+            },
+            targetLineGreen: {
+                value: limit_1,//1000,
+                class: 'ct-target-line_green'
+            },
+            targetLineRed: {
+                value: limit_2,//2000,
+                class: 'ct-target-line_red'
+            }
+        };
+
+        var dailyData = {
+            series: [dailyChartData]
+        };
+
+        var dailyOptions = {
+            showPoint: false,
+            axisY: {
+                type: Chartist.AutoScaleAxis,
+                max: 2400,
+                high: 2400,
+                low: 0,
+            },
+            axisX: {
+                type: Chartist.FixedScaleAxis,
+                divisor: 12,
+                labelInterpolationFnc: function (value) {
+                    return moment(value).format('HH:mm');
+                }
+            },
+            targetLineBlue: {
+                value: 400,
+                class: 'ct-target-line_blue'
+            },
+            targetLineYellow: {
+                value: limit_1,//1000,
+                class: 'ct-target-line_yellow'
+            },
+            targetLineGreen: {
+                value: limit_1,//1000,
+                class: 'ct-target-line_green'
+            },
+            targetLineRed: {
+                value: limit_2,//2000,
+                class: 'ct-target-line_red'
+            },
+            plugins: [
+                Chartist.plugins.zoom({
+                    onZoom: onZoom,
+                    resetOnRightMouseBtn: true
+                })
+            ]
+        };
+
+        var liveChart = new Chartist.Line('#liveChart', data, options);
+        var dailyChart = new Chartist.Line('#dailyChart', dailyData, dailyOptions);
+
+        var resetFnc;
+        function onZoom(chart, reset) {
+            resetFnc = reset;
+        }
+
+        function reset() {
+            resetFnc && resetFnc();
+            resetFnc = null;
+        }
+
+        function projectY(chartRect, bounds, value) {
+            return chartRect.y1 -
+                (chartRect.height() * (value - bounds.min) / (bounds.range));
+        }
+
+        window.dailyChart.on('created', function (context) {
+            var minLine = projectY(context.chartRect, context.bounds, context.bounds.min);
+            var maxLine = projectY(context.chartRect, context.bounds, context.bounds.max);
+            var targetLineMaxY = projectY(context.chartRect, context.bounds, 2500);
+            if (targetLineMaxY < maxLine) targetLineMaxY = maxLine;
+            var targetLineLimit2 = projectY(context.chartRect, context.bounds, limit_2);
+            if (targetLineLimit2 < maxLine) targetLineLimit2 = maxLine;
+            else if (targetLineLimit2 > minLine) targetLineLimit2 = minLine;
+            var targetLineLimit1 = projectY(context.chartRect, context.bounds, limit_1);
+            if (targetLineLimit1 < maxLine) targetLineLimit1 = maxLine;
+            else if (targetLineLimit1 > minLine) targetLineLimit1 = minLine;
+            var targetLineZero = projectY(context.chartRect, context.bounds, 0);
+            if (targetLineZero > minLine) targetLineZero = minLine;
+            context.svg.elem('rect', {
+                x: context.chartRect.x1,
+                y: targetLineMaxY,
+                width: context.chartRect.x2 - context.chartRect.x1,
+                height: targetLineLimit2 - targetLineMaxY,
+                fill: 'red'
+            }, "ct-area_red", true);
+            context.svg.elem('rect', {
+                x: context.chartRect.x1,
+                y: targetLineLimit2,
+                width: context.chartRect.x2 - context.chartRect.x1,
+                height: targetLineLimit1 - targetLineLimit2,
+                fill: 'yellow'
+            }, "ct-area_yellow", true);
+            context.svg.elem('rect', {
+                x: context.chartRect.x1,
+                y: targetLineLimit1,
+                width: context.chartRect.x2 - context.chartRect.x1,
+                height: targetLineZero - targetLineLimit1,
+
+            }, "ct-area_green", true);
+            var targetLineY = projectY(context.chartRect, context.bounds, context.options.targetLineBlue.value);
+            context.svg.elem('line', {
+                x1: context.chartRect.x1,
+                x2: context.chartRect.x2,
+                y1: targetLineY,
+                y2: targetLineY
+            }, context.options.targetLineBlue.class);
+        });
+
+        window.liveChart.on('created', function (context) {
+            var targetLineMaxY = projectY(context.chartRect, context.bounds, 2500);
+            var targetLineLimit2 = projectY(context.chartRect, context.bounds, limit_2);
+            var targetLineLimit1 = projectY(context.chartRect, context.bounds, limit_1);
+            var targetLineZero = projectY(context.chartRect, context.bounds, 0);
+            context.svg.elem('rect', {
+                x: context.chartRect.x1,
+                y: targetLineMaxY,
+                width: context.chartRect.x2 - context.chartRect.x1,
+                height: targetLineLimit2 - targetLineMaxY,
+                fill: 'red'
+            }, "ct-area_red", true);
+            context.svg.elem('rect', {
+                x: context.chartRect.x1,
+                y: targetLineLimit2,
+                width: context.chartRect.x2 - context.chartRect.x1,
+                height: targetLineLimit1 - targetLineLimit2,
+                fill: 'yellow'
+            }, "ct-area_yellow", true);
+            context.svg.elem('rect', {
+                x: context.chartRect.x1,
+                y: targetLineLimit1,
+                width: context.chartRect.x2 - context.chartRect.x1,
+                height: targetLineZero - targetLineLimit1,
+
+            }, "ct-area_green", true);
+            var targetLineY = projectY(context.chartRect, context.bounds, context.options.targetLineBlue.value);
+            context.svg.elem('line', {
+                x1: context.chartRect.x1,
+                x2: context.chartRect.x2,
+                y1: targetLineY,
+                y2: targetLineY
+            }, context.options.targetLineBlue.class);
+        });
+
+        function drawClock(lvl) {
+            screenWidth = document.getElementById("live").clientWidth - 20;
+            co2 = lvl;
+            var scale = screenWidth / 400;
+            var center = screenWidth / 2;
+            var width = 30 * scale;
+            var height = 30 * scale;
+            var radius = center - width;
+            co2AmpelContext.canvas.width = screenWidth;
+            co2AmpelContext.canvas.height = screenWidth;
+            segmentDisplayContext.canvas.width = 200 * scale;
+            segmentDisplayContext.canvas.height = 200 * scale;
+            segmentDisplayContext.canvas.style.left = (center - 100 * scale) + "px";
+            segmentDisplayContext.canvas.style.top = (center - 100 * scale) + "px";
+
+            co2AmpelContext.clearRect(0, 0, co2AmpelContext.canvas.width, co2AmpelContext.canvas.height);
+            co2AmpelContext.fillStyle = "darkblue";
+            roundRect(co2AmpelContext, 0, 0, co2AmpelContext.canvas.width, co2AmpelContext.canvas.height, 30, true)
+
+            co2AmpelContext.beginPath();
+            co2AmpelContext.fillStyle = "black";
+            co2AmpelContext.arc(center, center, radius + 0.75 * width, 0, 2 * Math.PI);
+            co2AmpelContext.fill();
+            co2AmpelContext.closePath()
+            co2AmpelContext.beginPath();
+            co2AmpelContext.fillStyle = "darkblue";
+            co2AmpelContext.arc(center, center, radius - 0.75 * width, 0, 2 * Math.PI);
+            co2AmpelContext.fill();
+            co2AmpelContext.closePath()
+
+            var fillColor1, fillColor2;
+            co2AmpelContext.translate(center, center);
+            if (co2 <= limit_1) {
+                fillColor1 = "rgba(0,256,0, 1)";
+                fillColor2 = "rgba(0,256,0, 0)";
+            } else if (co2 <= limit_2) {
+                fillColor1 = "rgba(256, 256, 0, 1)";
+                fillColor2 = "rgba(256, 256, 0, 0)";
+            } else {
+                fillColor1 = "rgba(256,0,0, 1)";
+                fillColor2 = "rgba(256,0,0, 0)";
+            }
+
+            for (num = 0; num < 24; num++) {
+                ang = num * Math.PI / 12;
+                co2AmpelContext.rotate(ang);
+                co2AmpelContext.translate(0, -radius);
+                co2AmpelContext.beginPath();
+                co2AmpelContext.fillStyle = "white";
+                co2AmpelContext.rect(-width / 2, -height / 2, width, height);
+                co2AmpelContext.closePath()
+                co2AmpelContext.fill();
+                if (num * 100 <= co2 - 100) {
+                    var grd = co2AmpelContext.createRadialGradient(0, 0, 2, 0, 0, 26 * scale);
+                    grd.addColorStop(0, fillColor1);
+                    grd.addColorStop(1, fillColor2);
+                    co2AmpelContext.fillStyle = grd;
+                    co2AmpelContext.beginPath();
+                    co2AmpelContext.arc(0, 0, 0.8 * width, 0, 2 * Math.PI);
+                    co2AmpelContext.closePath()
+                    co2AmpelContext.fill();
+                }
+                else {
+                    co2AmpelContext.fillStyle = "gray";
+                    co2AmpelContext.beginPath();
+                    co2AmpelContext.arc(0, 0, 0.4 * width, 0, 2 * Math.PI);
+                    co2AmpelContext.closePath()
+                    co2AmpelContext.fill();
+                }
+                co2AmpelContext.rotate(-ang);
+                co2AmpelContext.rotate(ang);
+                co2AmpelContext.translate(0, radius);
+                co2AmpelContext.rotate(-ang);
+            }
+            co2AmpelContext.translate(-center, -center);
+        }
+
+        function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+            if (typeof stroke === 'undefined') {
+                stroke = true;
+            }
+            if (typeof radius === 'undefined') {
+                radius = 5;
+            }
+            if (typeof radius === 'number') {
+                radius = {
+                    tl: radius,
+                    tr: radius,
+                    br: radius,
+                    bl: radius
+                };
+            } else {
+                var defaultRadius = {
+                    tl: 0,
+                    tr: 0,
+                    br: 0,
+                    bl: 0
+                };
+                for (var side in defaultRadius) {
+                    radius[side] = radius[side] || defaultRadius[side];
+                }
+            }
+            ctx.beginPath();
+            ctx.moveTo(x + radius.tl, y);
+            ctx.lineTo(x + width - radius.tr, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius.tr);
+            ctx.lineTo(x + width, y + height - radius.br);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius.br, y + height);
+            ctx.lineTo(x + radius.bl, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius.bl);
+            ctx.lineTo(x, y + radius.tl);
+            ctx.quadraticCurveTo(x, y, x + radius.tl, y);
+            ctx.closePath();
+            if (fill) {
+                ctx.fill();
+            }
+            if (stroke) {
+                ctx.stroke();
+            }
+        }
+
+        function updateDisplay() {
+            if (document.getElementById("live").style.display != "none") {
+                var val;
+                if (sensorData[1] < 1000) val = ' ' + sensorData[1];
+                else val = '' + sensorData[1];
+                drawClock(sensorData[1]);
+                display.setValue(val);
+            }
+        }
+
+        function getSensorData() {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    var txt = this.responseText;
+                    var obj = JSON.parse(txt);
+                    sensorData[0] = obj.Time;
+                    sensorData[1] = (parseInt(obj.CO2) < 2400) ? parseInt(obj.CO2) : 2400;
+                    sensorData[2] = parseFloat(obj.Temperature);
+                    sensorData[3] = parseFloat(obj.Humidity);
+                }
+            };
+            xhttp.open("GET", "/sensordata", true);
+            xhttp.send();
+        }
+
+        function addLiveData() {
+            if (liveChartData.length > maxLiveData) {
+                liveChartLabels.shift();
+                liveChartData.shift();
+            }
+            liveChartLabels.push(sensorData[0]);
+            liveChartData.push(parseInt(sensorData[1]));
+            liveChart.update();
+        };
+
+        function showPage(page) {
+            for (var i = 0; i < 3; i++) {
+                var p = document.getElementById(pages[i]);
+                if (pages[i] == page) {
+                    p.style.display = "block";
+                    if (i == 0) {
+                        updateDisplay();
+                    }
+                    else if (i == 1) {
+                        dailyChart.update(dailyData, dailyOptions, true);
+                        dailyChart.update(null, { multiThresholdOptions: { threshold: [parseInt(limit_1), parseInt(limit_2)] } }, true);
+                    }
+                    else if (i == 2) {
+                        liveChart.update();
+                    }
+                } else {
+                    p.style.display = "none";
+                }
+            }
+        }
+
+        function loadSelected(val) {
+            dayOfTheWeek = val;
+            document.getElementById("downloadData").innerHTML = logFiles[dayOfTheWeek - 1] + " herunterladen...";
+            loadDailyData();
+        }
+
+        function loadDailyData() {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    removeDailyData();
+                    parseData(this.responseText);
+                }
+            };
+            var filename = logFiles[dayOfTheWeek - 1];
+            console.log(filename);
+            xhttp.open("GET", filename, true);
+            xhttp.send();
+        }
+
+        function removeDailyData() {
+            dailyData.labels = [];
+            dailyData.series[0] = [];
+            dailyChart.update();
+        }
+
+        function parseData(data) {
+            var allRows = data.split(/\r?\n|\r/);
+            var dateString = "";
+            var obj = [];
+            var result = [];
+
+            for (var singleRow = 0; singleRow < allRows.length; singleRow++) {
+                if (singleRow == 0) {
+                    var logDate = allRows[singleRow];
+                    var dateString = "" + logDate.slice(0, 4) + "-" + logDate.slice(4, 6) + "-" + logDate.slice(6, 8);
+                    document.getElementById('logDate').innerHTML = "Log vom " + logDate.slice(6, 8) + "." + logDate.slice(4, 6) + "." + logDate.slice(0, 4);
+                } else if (singleRow == 1) {
+                    var device = allRows[singleRow];
+                }
+                else {
+                    var rowCells = allRows[singleRow].split(',');
+                    if (rowCells[0] != "") {
+                        var logDateString = dateString + "T" + String(rowCells[0]);
+                        var dataString = "{ \"x\": new Date(\"" + logDateString + "\"), \"y\": " + String(rowCells[1]) + "}";
+                        dailyData.series[0].push({ x: new Date(moment(logDateString)), y: rowCells[1] });
+                    }
+                }
+            }
+            dailyChart.update(dailyData, dailyOptions, true);
+            dailyChart.update();
+        }
+
+        function setLimits() {
+            var slider_value1 = document.getElementById("limit1").value;
+            var slider_value2 = document.getElementById("limit2").value;
+            limit_1 = slider_value1;
+            limit_2 = slider_value2;
+            document.getElementById('lim1').innerHTML = slider_value1;
+            document.getElementById('lim2').innerHTML = slider_value2;
+
+            options.targetLineGreen.value = parseInt(limit_1);
+            options.targetLineYellow.value = parseInt(limit_1);
+            options.targetLineRed.value = parseInt(limit_2);
+            dailyOptions.targetLineGreen.value = parseInt(limit_1);
+            dailyOptions.targetLineYellow.value = parseInt(limit_1);
+            dailyOptions.targetLineRed.value = parseInt(limit_2);
+            console.log(options.plugins);
+            liveChart.update(data, options, true);
+        }
+
+        function saveLimits() {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    tempAlert('alertTextLimit', "Grenzen gespeichert!", "success", 4000);
+                }
+            };
+            var tmp = "/setLimits?limit1=" + limit_1 + "\&limit2=" + limit_2;
+            console.log(tmp);
+            xhttp.open("GET", tmp, true);
+            xhttp.send();
+        }
+
+        function setTime() {
+            var datetime = document.getElementById('datetime').value;
+            if (datetime != '') {
+                var dt = datetime.split('T');
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function () {
+                    if (this.readyState == 4 && this.status == 200) {
+                        tempAlert('alertTextTime', "Zeit eingestellt", "success", 4000);
+                    }
+                };
+                var tmp = "/setTime?date=" + dt[0] + "\&time=" + dt[1];
+                xhttp.open("GET", tmp, true);
+                xhttp.send();
+            }
+        }
+
+        function setDeviceName() {
+            var devname = document.getElementById('devicename').value;
+
+            if (!/^\w+$/.test(devname) || devname.length < 4 || devname.length > 14) {
+                tempAlert('alertTextDevice', "Eingabe fehlerhaft (nur Buchstaben, Zahlen und -, 4-14 Zeichen", "error", 4000);
+            } else {
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function () {
+                    if (this.readyState == 4 && this.status == 200) {
+                        tempAlert('alertTextDevice', this.responseText, "success", 4000);
+                        document.getElementById('title').innerHTML = "CO2-Ampel - "+devname;
+                    }
+                };
+                var tmp = "/setDeviceName?name=" + devname;
+                xhttp.open("GET", tmp, true);
+                xhttp.send();
+            }
+        }
+
+        function setWifi() {
+            var ssid = document.getElementById("wifissid").value;
+            var pw = document.getElementById("wifipassword").value;
+            var stat = "off";
+            if (document.getElementById("stationcheck").checked)
+                stat = "on";
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    tempAlert('alertTextWifi', this.responseText, "success", 4000);
+                    setTimeout(function() {getWifiResult();}, 10000);
+                }
+            };
+            var tmp = "/setWifi?connect=" + stat + "\&ssid=" + ssid + "\&pass=" + pw;
+            /* tempAlert('alertTextWifi', tmp, "success", 8000);
+            console.log(tmp); */
+            xhttp.open("GET", tmp, true);
+            xhttp.send();
+
+        }
+
+        function getWifiResult() {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    if (this.responseText.indexOf("erfolgreich") > -1)
+                        tempAlert('alertTextWifi', this.responseText, "success", 10000);
+                    else
+                        tempAlert('alertTextWifi', this.responseText, "error", 6000);
+                }
+            };
+            var tmp = "/getWifiResult";
+
+            xhttp.open("GET", tmp, true);
+            xhttp.send();
+
+        }
+
+        function calibrateSensor() {
+            var pw = document.getElementById("password").value;
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    if (this.responseText == "Kalibrierung erfolgt!")
+                        tempAlert('alertText', this.responseText, "success", 4000);
+                    else
+                        tempAlert('alertText', this.responseText, "error", 4000);
+                }
+            };
+            var tmp = "/calibrateSCD30?pw=" + pw;
+            xhttp.open("GET", tmp, true);
+            xhttp.send();
+        }
+
+        function downloadData() {
+            var filename = logFiles[dayOfTheWeek - 1];
+            var wnd = window.open(filename);
+        };
+
+        function tempAlert(parent, msg, msgtype, duration) {
+            var el = document.createElement("div");
+            el.setAttribute("class", msgtype);
+            el.innerHTML = msg;
+            setTimeout(function () {
+                el.parentNode.removeChild(el);
+            }, duration);
+            document.getElementById(parent).appendChild(el);
+        }
+
+        window.onload = function () {
+            var d = new Date();
+            var n = d.getDay();
+            if (n == 0) dayOfTheWeek = 7;
+            else dayOfTheWeek = n;
+            document.getElementById('select-chart').value = dayOfTheWeek;
+            loadSelected(dayOfTheWeek);
+            showPage('live');
+        };
+
+        var sensorInterval = setInterval(getSensorData, 2000);
+        var displayInterval = setInterval(updateDisplay, 2000);
+        var liveDataInterval = setInterval(addLiveData, 4000);
+    </script>
+</body>
+
+</html>

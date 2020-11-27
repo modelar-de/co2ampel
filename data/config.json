@@ -1,0 +1,14 @@
+{
+    "devicename": "GSI01",
+    "limit1": 1000,
+    "limit2": 2000,
+    "stationmode": true,
+    "ssid": "",
+    "password": "",
+    "myssid": "CO2Ampel_GSIO1",
+    "mypassword": "ampel2021",
+    "altitude": 553,
+    "pressure": 1017,
+    "tempoffset": 2,
+    "timefallback": 1604188800
+}

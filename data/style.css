@@ -1,0 +1,362 @@
+* {
+    margin: 0;
+    padding: 0;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+
+/* Set height of body and the document to 100% to enable "full page tabs" */
+body,
+html {
+    /*  height: 100%; */
+    margin: 0;
+    font-family: Arial;
+}
+
+html {
+    font-family: Arial;
+    display: inline-block;
+    margin: 0px auto;
+    text-align: center;
+}
+
+body {
+    padding-top: 100px;
+    padding-bottom: 40px;
+}
+
+/* Style tab links */
+.tablink {
+    background-color: rgb(0, 17, 255);
+    color: white;
+    float: left;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    font-size: 17px;
+    width: 33%;
+}
+
+.tablink:hover {
+    background-color: rgb(0, 10, 155);
+}
+
+.ct-chart {
+    margin-bottom: 20px;
+}
+
+svg.ct-chart-bar,
+svg.ct-chart-line {
+    overflow: visible;
+}
+
+.ct-label.ct-label.ct-horizontal.ct-end {
+    font-size: 9px;
+    position: relative;
+    justify-content: flex-end;
+    text-align: right;
+    transform-origin: 100% 0;
+    transform: translate(-100%) rotate(-45deg);
+    white-space: nowrap;
+}
+
+
+.fixed-header,
+.fixed-footer {
+    left: 0;
+    /* display: block; */
+    width: 100%;
+    position: fixed;
+    background: rgb(0, 17, 255);
+    padding: 10px 10px 10px 10px;
+    z-index: 99;
+    color: #fff;
+}
+
+.fixed-header {
+    top: 0;
+}
+
+.fixed-footer {
+    bottom: 0;
+}
+
+.page_container {
+    padding: 10px 10px 10px 10px;
+    /* margin: 10px 10px 10px 10px; 
+     width: 100%; */
+    display: inline-block;
+    /* Center the DIV horizontally */
+}
+
+.text_left {
+    text-align: left;
+}
+
+.container {
+    width: 90%;
+    margin: 0 auto;
+    /* Center the DIV horizontally */
+}
+
+nav a {
+    color: #fff;
+    text-decoration: none;
+    padding: 7px 25px;
+    display: inline-block;
+}
+
+/* style the svg rect */
+.ct-zoom-rect {
+    fill: rgba(255, 172, 172, 0.363);
+    stroke: red;
+}
+
+.ct-target-line_blue {
+    stroke: blue;
+    stroke-width: 2px;
+    stroke-dasharray: 4px;
+    shape-rendering: crispEdges;
+}
+
+
+.ct-area_green {
+    /* stroke: green; */
+    fill: rgba(17, 223, 17, 0.424);
+}
+
+.ct-area_red {
+    /* stroke: green; */
+    fill: rgba(255, 0, 0, 0.424);
+}
+
+.ct-area_yellow {
+    /* stroke: green; */
+    fill: rgba(255, 238, 0, 0.527);
+}
+
+
+/* The container must be positioned relative: */
+.custom-select {
+    position: relative;
+    font-family: Arial;
+}
+
+.custom-select select {
+    display: none;
+    /*hide original SELECT element: */
+}
+
+.select-selected {
+    background-color: DodgerBlue;
+}
+
+/* Style the arrow inside the select element: */
+.select-selected:after {
+    position: absolute;
+    content: "";
+    top: 14px;
+    right: 10px;
+    width: 0;
+    height: 0;
+    border: 6px solid transparent;
+    border-color: #fff transparent transparent transparent;
+}
+
+/* Point the arrow upwards when the select box is open (active): */
+.select-selected.select-arrow-active:after {
+    border-color: transparent transparent #fff transparent;
+    top: 7px;
+}
+
+/* style the items (options), including the selected item: */
+.select-items div,
+.select-selected {
+    color: #ffffff;
+    padding: 8px 16px;
+    border: 1px solid transparent;
+    border-color: transparent transparent rgba(0, 0, 0, 0.1) transparent;
+    cursor: pointer;
+}
+
+/* Style items (options): */
+.select-items {
+    position: absolute;
+    background-color: DodgerBlue;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 10;
+}
+
+/* Hide the items when the select box is closed: */
+.select-hide {
+    display: none;
+}
+
+.select-items div:hover,
+.same-as-selected {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.ct-series-a .ct-line {
+    stroke: rgb(0, 0, 0);
+    stroke-width: 2px;
+}
+
+
+.wrap {
+    max-width: 400px;
+    margin: 1em auto;
+}
+
+/*--------Accordion 1 Blau -------*/
+
+.accordion .panel {
+    margin: 0 auto;
+    height: 0;
+    overflow: hidden;
+    background-color: white;
+    line-height: 1.4;
+    padding: 0 20px;
+    box-sizing: border-box;
+    transition: all 0.5s;
+}
+
+.accordion input:checked~.panel {
+    height: auto;
+    color: #333;
+    padding: 20px;
+    transition: all 0.5s;
+}
+
+.accordion label.acc {
+    cursor: pointer;
+    background-color: rgb(0, 17, 255);
+    ;
+    /* Hellblau */
+    border-bottom: 2px solid rgb(0, 17, 255);
+    ;
+    display: block;
+    padding: 15px;
+    width: 100%;
+    color: #fff;
+    font-weight: 400;
+    box-sizing: border-box;
+    z-index: 100;
+}
+
+.accordion input.acc {
+    display: none;
+}
+
+.accordion input:checked+label {
+    background-color: rgb(0, 10, 155);
+    ;
+    /* Dunkelblau */
+}
+
+.accordion input:checked+label:before {
+    transition: 0.5s;
+}
+
+.selectbox {
+    width: 120px;
+    height: 40px;
+    border: 1px solid #999;
+    font-size: 14px;
+    color: #fff;
+    background-color: rgb(0, 17, 255);
+    padding: 10px 0;
+    margin: 10px 10px 10px 10px;
+    /* border-radius: 3px;
+    box-shadow: 2px 2px #ccc; */
+}
+
+.btn {
+    min-width: 120px;
+    height: 40px;
+    border: 1px solid #999;
+    font-size: 14px;
+    color: #fff;
+    background-color: rgb(0, 17, 255);
+    padding: 10px 10px 10px 10px;
+    margin: 10px 10px 10px 10px;
+    /* border-radius: 3px;
+        box-shadow: 2px 2px #ccc; */
+}
+
+.error {
+    border: 1px solid rgb(255, 0, 0);
+    font-size: 14px;
+    color: #fff;
+    background-color: rgba(255, 0, 0, 0.582);
+    padding: 10px 10px 10px 10px;
+    margin: 10px 10px 10px 10px;
+}
+
+.success {
+    border: 1px solid rgb(0, 255, 0);
+    font-size: 14px;
+    color: #fff;
+    background-color: rgba(0, 255, 0, 0.582);
+    padding: 10px 10px 10px 10px;
+    margin: 10px 10px 10px 10px;
+}
+
+/* The switch - the box around the slider */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 56px;
+  height: 29px;
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* The slider */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 21px;
+  width: 21px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: rgb(0, 17, 255);
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px rgb(0, 17, 255);
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(26px);
+  -ms-transform: translateX(26px);
+  transform: translateX(26px);
+}
